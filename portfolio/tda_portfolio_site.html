@@ -1,0 +1,283 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Bricolage+Grotesque:wght@300;400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--surface:#161616;--surface2:#1e1e1e;--border:#2a2a2a;
+  --text:#f0ede8;--muted:#888;--accent:#c8f564;--accent2:#7b6cf6;
+  --danger:#e05252;
+}
+body{background:var(--bg);color:var(--text);font-family:'Bricolage Grotesque',sans-serif;min-height:100vh;padding:0}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+header{padding:3rem 2.5rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;gap:1rem}
+.site-title{font-family:'DM Serif Display',serif;font-size:2.8rem;line-height:1;letter-spacing:-0.02em}
+.site-title span{color:var(--accent);font-style:italic}
+.tagline{font-size:0.8rem;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin-top:0.5rem}
+.btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:0.5rem 1.1rem;font-size:0.85rem;font-family:'Bricolage Grotesque',sans-serif;cursor:pointer;border-radius:4px;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.4rem}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-accent{background:var(--accent);color:#0d0d0d;border-color:var(--accent);font-weight:600}
+.btn-accent:hover{background:#b0e04a;color:#0d0d0d;border-color:#b0e04a}
+main{padding:2.5rem;max-width:1100px}
+.controls{display:flex;align-items:center;gap:1rem;margin-bottom:2rem}
+.filter-tabs{display:flex;gap:0.4rem;flex:1;overflow-x:auto}
+.tab{padding:0.35rem 0.9rem;font-size:0.82rem;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;white-space:nowrap;transition:all 0.2s}
+.tab.active{background:var(--accent);color:#0d0d0d;border-color:var(--accent);font-weight:500}
+.empty{text-align:center;padding:5rem 2rem;border:1px dashed var(--border);border-radius:8px}
+.empty-icon{font-size:2.5rem;margin-bottom:1rem;opacity:0.3}
+.empty p{color:var(--muted);font-size:0.95rem}
+.empty p strong{color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color 0.2s,transform 0.2s;cursor:pointer;position:relative}
+.card:hover{border-color:#444;transform:translateY(-2px)}
+.card-accent{height:3px;width:100%}
+.card-body{padding:1.25rem 1.5rem 1rem}
+.card-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem}
+.card-tag{font-size:0.72rem;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em}
+.card-date{font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace}
+.card-title{font-size:1.15rem;font-weight:500;margin-bottom:0.5rem;line-height:1.3}
+.card-conclusion{font-size:0.85rem;color:var(--muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-footer{padding:0.75rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;justify-content:flex-end}
+.card-footer .btn{padding:0.3rem 0.7rem;font-size:0.78rem}
+.status-badge{display:inline-block;font-size:0.7rem;font-family:'DM Mono',monospace;padding:0.2rem 0.6rem;border-radius:20px;font-weight:500}
+.status-done{background:#1a2e0a;color:#a3d65a;border:1px solid #3a5e15}
+.status-wip{background:#1e1a00;color:#d4b84a;border:1px solid #5a4a00}
+.status-idea{background:#1a1a2e;color:#8a7af6;border:1px solid #3a3070}
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto}
+.modal-header{padding:1.5rem 1.5rem 0;display:flex;align-items:center;justify-content:space-between}
+.modal-header h2{font-family:'DM Serif Display',serif;font-size:1.4rem}
+.modal-body{padding:1.25rem 1.5rem}
+.modal-footer{padding:1rem 1.5rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid var(--border)}
+label{display:block;font-size:0.8rem;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem;margin-top:1rem}
+label:first-of-type{margin-top:0}
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:0.6rem 0.75rem;border-radius:4px;font-family:'Bricolage Grotesque',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent2)}
+textarea{min-height:120px;resize:vertical;line-height:1.6}
+select option{background:var(--surface2)}
+.color-row{display:flex;gap:0.5rem;margin-top:0.4rem}
+.color-swatch{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform 0.15s}
+.color-swatch.selected{border-color:var(--text);transform:scale(1.15)}
+/* View modal */
+.view-title{font-family:'DM Serif Display',serif;font-size:1.8rem;line-height:1.2;margin-bottom:0.5rem}
+.view-meta{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.view-body{font-size:0.92rem;line-height:1.75;color:var(--muted);white-space:pre-wrap}
+.section-label{font-size:0.72rem;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.4rem;margin-top:1.25rem}
+</style>
+<h2 class="sr-only">TDA Project Portfolio — manage and browse your projects</h2>
+
+<header>
+  <div>
+    <div class="site-title">Project <span>Archive</span></div>
+    <div class="tagline">Topological Data Analysis · Persistent Homology</div>
+  </div>
+  <button class="btn btn-accent" onclick="openAdd()"><i class="ti ti-plus" aria-hidden="true"></i> Add project</button>
+</header>
+
+<main>
+  <div class="controls">
+    <div class="filter-tabs" id="tabs">
+      <button class="tab active" onclick="setFilter('all',this)">All</button>
+      <button class="tab" onclick="setFilter('done',this)">Completed</button>
+      <button class="tab" onclick="setFilter('wip',this)">In progress</button>
+      <button class="tab" onclick="setFilter('idea',this)">Ideas</button>
+    </div>
+  </div>
+  <div id="grid"></div>
+</main>
+
+<!-- Add/Edit modal -->
+<div class="overlay" id="formOverlay" onclick="closeIfBg(event,'formOverlay')">
+  <div class="modal" role="dialog" aria-labelledby="formTitle">
+    <div class="modal-header">
+      <h2 id="formTitle">New project</h2>
+      <button class="btn" onclick="closeModal('formOverlay')" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <label>Project title</label>
+      <input type="text" id="fTitle" placeholder="e.g. Noisy circle with Ripser">
+      <label>Stage / category</label>
+      <input type="text" id="fTag" placeholder="e.g. Stage 1 · Pipeline Fluency">
+      <label>Status</label>
+      <select id="fStatus">
+        <option value="done">Completed</option>
+        <option value="wip">In progress</option>
+        <option value="idea">Idea</option>
+      </select>
+      <label>Description / goals</label>
+      <textarea id="fDesc" placeholder="What did you set out to do?"></textarea>
+      <label>Conclusions & takeaways</label>
+      <textarea id="fConclusion" placeholder="What did you learn? What surprised you?"></textarea>
+      <label>Accent colour</label>
+      <div class="color-row" id="colorRow"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('formOverlay')">Cancel</button>
+      <button class="btn btn-accent" onclick="saveProject()">Save project</button>
+    </div>
+  </div>
+</div>
+
+<!-- View modal -->
+<div class="overlay" id="viewOverlay" onclick="closeIfBg(event,'viewOverlay')">
+  <div class="modal" role="dialog" aria-labelledby="viewTitle">
+    <div class="modal-header">
+      <h2 id="viewTitle" style="opacity:0">·</h2>
+      <button class="btn" onclick="closeModal('viewOverlay')" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body" id="viewBody"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('viewOverlay')">Close</button>
+      <button class="btn" id="viewEditBtn">Edit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS=['#c8f564','#7b6cf6','#e05252','#4ab8d8','#f5a623','#e87aab'];
+const STORE_KEY='tda_portfolio_v1';
+let projects=[],filter='all',editingId=null,viewingId=null;
+
+function load(){
+  try{projects=JSON.parse(localStorage.getItem(STORE_KEY)||'[]')}catch{projects=[]}
+}
+function save(){localStorage.setItem(STORE_KEY,JSON.stringify(projects))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+
+function render(){
+  const g=document.getElementById('grid');
+  const shown=filter==='all'?projects:projects.filter(p=>p.status===filter);
+  if(shown.length===0){
+    g.innerHTML=`<div class="empty"><div class="empty-icon"><i class="ti ti-topology-star" aria-hidden="true"></i></div><p><strong>No projects yet.</strong><br>Click <em>Add project</em> to log your first one.</p></div>`;
+    return;
+  }
+  g.innerHTML='';
+  g.className='grid';
+  shown.slice().reverse().forEach(p=>{
+    const card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`<div class="card-accent" style="background:${p.color||COLORS[0]}"></div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-tag">${esc(p.tag||'')}</span>
+          <span class="card-date">${p.date||''}</span>
+        </div>
+        <div class="card-title">${esc(p.title)}</div>
+        <div class="card-conclusion">${esc(p.conclusion||p.desc||'No notes yet.')}</div>
+      </div>
+      <div class="card-footer">
+        <span class="status-badge status-${p.status}">${statusLabel(p.status)}</span>
+        <button class="btn" onclick="event.stopPropagation();editProject('${p.id}')">Edit</button>
+        <button class="btn" onclick="event.stopPropagation();deleteProject('${p.id}')">Delete</button>
+      </div>`;
+    card.addEventListener('click',()=>viewProject(p.id));
+    g.appendChild(card);
+  });
+}
+
+function statusLabel(s){return{done:'Completed',wip:'In progress',idea:'Idea'}[s]||s}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function setFilter(f,el){
+  filter=f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function buildColorRow(selected){
+  const row=document.getElementById('colorRow');
+  row.innerHTML='';
+  COLORS.forEach(c=>{
+    const s=document.createElement('button');
+    s.className='color-swatch'+(c===selected?' selected':'');
+    s.style.background=c;
+    s.setAttribute('aria-label',`Accent color ${c}`);
+    s.onclick=()=>{document.querySelectorAll('.color-swatch').forEach(x=>x.classList.remove('selected'));s.classList.add('selected')};
+    row.appendChild(s);
+  });
+}
+
+function openAdd(){
+  editingId=null;
+  document.getElementById('formTitle').textContent='New project';
+  document.getElementById('editId').value='';
+  document.getElementById('fTitle').value='';
+  document.getElementById('fTag').value='';
+  document.getElementById('fStatus').value='wip';
+  document.getElementById('fDesc').value='';
+  document.getElementById('fConclusion').value='';
+  buildColorRow(COLORS[0]);
+  document.getElementById('formOverlay').classList.add('open');
+}
+
+function editProject(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  editingId=id;
+  document.getElementById('formTitle').textContent='Edit project';
+  document.getElementById('editId').value=id;
+  document.getElementById('fTitle').value=p.title;
+  document.getElementById('fTag').value=p.tag||'';
+  document.getElementById('fStatus').value=p.status;
+  document.getElementById('fDesc').value=p.desc||'';
+  document.getElementById('fConclusion').value=p.conclusion||'';
+  buildColorRow(p.color||COLORS[0]);
+  document.getElementById('formOverlay').classList.add('open');
+  closeModal('viewOverlay');
+}
+
+function saveProject(){
+  const title=document.getElementById('fTitle').value.trim();
+  if(!title){document.getElementById('fTitle').focus();return;}
+  const selected=document.querySelector('.color-swatch.selected');
+  const color=selected?selected.style.background:COLORS[0];
+  const data={
+    title,
+    tag:document.getElementById('fTag').value.trim(),
+    status:document.getElementById('fStatus').value,
+    desc:document.getElementById('fDesc').value.trim(),
+    conclusion:document.getElementById('fConclusion').value.trim(),
+    color,
+    date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})
+  };
+  if(editingId){
+    const i=projects.findIndex(x=>x.id===editingId);
+    if(i>=0)projects[i]={...projects[i],...data};
+  }else{
+    projects.push({id:uid(),...data});
+  }
+  save();render();closeModal('formOverlay');
+}
+
+function deleteProject(id){
+  if(!confirm('Delete this project?'))return;
+  projects=projects.filter(x=>x.id!==id);
+  save();render();
+}
+
+function viewProject(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  viewingId=id;
+  document.getElementById('viewTitle').textContent='·';
+  document.getElementById('viewBody').innerHTML=`
+    <div style="border-top:3px solid ${p.color||COLORS[0]};margin-bottom:1.25rem;margin-top:0.25rem"></div>
+    <div class="view-title">${esc(p.title)}</div>
+    <div class="view-meta">
+      ${p.tag?`<span style="font-size:0.78rem;font-family:'DM Mono',monospace;color:var(--muted)">${esc(p.tag)}</span>`:''}
+      <span class="status-badge status-${p.status}">${statusLabel(p.status)}</span>
+      <span style="font-size:0.78rem;color:var(--muted);font-family:'DM Mono',monospace">${p.date||''}</span>
+    </div>
+    ${p.desc?`<div class="section-label">Description</div><div class="view-body">${esc(p.desc)}</div>`:''}
+    ${p.conclusion?`<div class="section-label">Conclusions & takeaways</div><div class="view-body">${esc(p.conclusion)}</div>`:''}
+  `;
+  document.getElementById('viewEditBtn').onclick=()=>editProject(id);
+  document.getElementById('viewOverlay').classList.add('open');
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function closeIfBg(e,id){if(e.target===document.getElementById(id))closeModal(id)}
+
+load();render();
+</script>
