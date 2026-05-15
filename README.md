@@ -46,18 +46,36 @@ tda-learning/
 
 **Key insights:** 
 - One long bar in $H_1$ = one persistent loop = the circle. Everything else is noise.
-- **Variables in order of :**
+    <img width="1971" height="601" alt="circle_n100_ns0 1_pd+bc_th0 0" src="https://github.com/user-attachments/assets/cf51658f-be46-4c0e-8b97-88c4031e4b75" />
+
+- **Hierarchy of Variables:**
   - Sample Size determines the foundation
+    - As sample size increases, the gaps between points become smaller (higher density):
+      - denser grid picks up signal _sooner_ &rarr; shifts the birth value left
+      - triangles which _fill in the loop_ appear sooner &rarr; shifts death value left
+        - death drops _more slowly_ than birth &rarr; **persistence increases with sample size**
+    
+    <img width="705" height="1156" alt="Birth at different sample size" src="https://github.com/user-attachments/assets/d6bb892e-fa83-45b2-926b-e67edb7ba5fc" />
   - Noise determines the signal quality
+    - As noise level increases, more points scatter inward/outward of the circle &rarr; pairwise gaps become irregular:
+      - some "shortcut edge" appears at a **smaller** $\epsilon$ than it would on a clean circle &rarr; kills cycle earlier &rarr; lower death value 
+      - scattered points means loops form later &rarr; birth rises slightly  
+      - **more noise &rarr; lower persistence**
+    <img width="705" height="1443" alt="Death at different noise values" src="https://github.com/user-attachments/assets/56aea7fa-a92e-4c4a-8569-2c45c9b96862" />
   - Threshold permanently loses data and is used for visual interpretation ONLY
 - **Birth/Death** are decoupled — birth does NOT determine death (they happen at _independent_ filtration values)
-  - **BIRTH** reflects **SAMPLING**
+  - **BIRTH** reflects **SAMPLING**  
   - **DEATH** reflects **GEOMETRY**
   - if circle radius doubles &rarr; birth AND death values double
   - low sample size can mean true loop never closes cleanly
     - small sample size INCREASES the birth value (doesn't affect death) — sparse point cloud's require larger radius for filtration construction
   - noise creates many short-spanned spurious loops
     - _High Noise + Low `n`_ &rarr; noisy features can OUTIVE signal feature. ONLY FIX IS MORE DATA
+      <img width="1962" height="601" alt="circle_n50_ns0 05_pd+bc_th0 0" src="https://github.com/user-attachments/assets/716289ad-a62a-47df-92f2-c87d747bf037" />
+      <img width="1962" height="601" alt="circle_n50_ns0 5_pd+bc_th0 0" src="https://github.com/user-attachments/assets/c959a774-0756-4e66-af85-47d352133a4c" />
+
+
+
 ---
 ## Setup
 **Requirements:** Python 3.8+, WSL or Linux/macOS recommended
