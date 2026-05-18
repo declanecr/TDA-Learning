@@ -13,7 +13,7 @@ This repo documents a five-stage learning roadmap — from pipeline basics throu
 | Stage | Topic                                                                              | Status      |
 | ----- | ---------------------------------------------------------------------------------- | ----------- |
 | 01    | **Pipeline Fluency** — Noisy circle, Ripser, H₀/H₁, barcodes, persistence diagrams | ✅ Complete  |
-| 02    | **Complex Comparison** — Vietoris-Rips vs Alpha complexes                          | ⏳In Progress |
+| 02    | **Complex Comparison** — Vietoris-Rips vs Alpha complexes                          | ✅ Complete  |
 | 03    | **Geometric Interpretation** — Torus, MNIST digits, Betti numbers                  | 🔲 Upcoming |
 | 04    | **Real Data** — RCSB PDB proteins, OpenTopography terrain                          | 🔲 Upcoming |
 | 05    | **ML Integration** — Persistence images as classifier features                     | 🔲 Upcoming |
@@ -124,7 +124,6 @@ Rips simplex counts grew dramatically with sample size; Alpha grew near-linearly
 | Noisy circle   | 300 | 39710          | 1747               | ~23×   |
 | Torus          | 300 | 94044          | 12783               | ~7.4×  |
 
-> Fill in measured values from your notebook output.
 
 <!-- IMAGE: Bar chart or line plot of simplex count vs n for both complexes -->
 
@@ -148,11 +147,13 @@ This was verified quantitatively using:
 
 A bottleneck distance much smaller than the signal bar's persistence confirms the diagrams are functionally equivalent.
 
-<!-- IMAGE: Side-by-side persistence diagrams (Rips vs Alpha) on the same axes for the noisy circle -->
-<!-- Suggested label: diagrams_rips_vs_alpha_circle.png -->
+_NOTE:_ Alpha complex PD's have a different scale than Rips because $\alpha = r^2$, therefore the bottleneck and wasserstein distances in this comparison will indicate that the diagrams are very different, despite them conveying almost identical information about the same point cloud.
 
-<!-- IMAGE: Side-by-side persistence diagrams for the torus (should show H₀=1, H₁=2, H₂=1) -->
-<!-- Suggested label: diagrams_rips_vs_alpha_torus.png -->
+#### Circle
+<img width="1209" height="1011" alt="Circle rips vs alpha W B distances" src="https://github.com/user-attachments/assets/b2af1457-3af2-4106-a73c-ec3159f4e018" />
+
+#### Torus
+<img width="1197" height="1011" alt="Torus rips vs alpha W B distances" src="https://github.com/user-attachments/assets/ff472513-024c-4006-b6a2-7105f0c6e5b7" />
 
 ---
 
@@ -166,10 +167,10 @@ The torus has known Betti numbers: $\beta_0 = 1$, $\beta_1 = 2$, $\beta_2 = 1$.
 | $\beta_1 = 2$ | Two independent loops (short way and long way around the donut) |
 | $\beta_2 = 1$ | One enclosed void (the interior of the tube surface) |
 
-Both complexes recovered this signature. Note: the torus Rips/Alpha ratio (~4.6×) is lower than the circle — the torus is a 2D surface in 3D, so the Delaunay triangulation is still sparse relative to what Rips constructs, but less aggressively so than on a 1D curve.
+Both complexes recovered this signature. Note: the torus Rips/Alpha ratio (~7.4×) is lower than the circle at the same sample size (23x)— the torus is a 2D surface in 3D, so the Delaunay triangulation is still sparse relative to what Rips constructs, but less aggressively so than on a 1D curve.
+<img width="1611" height="1011" alt="Torus topology recovery - NO threshold" src="https://github.com/user-attachments/assets/a45c0547-21ae-4a3c-9126-cc69975e1bce" />
+<img width="1611" height="1011" alt="Torus topology recovery - Threshold" src="https://github.com/user-attachments/assets/ca72427b-bf19-4ac1-b20e-634dcd91ce6a" />
 
-<!-- IMAGE: Torus point cloud (3D scatter) alongside its persistence diagram showing H₁=2, H₂=1 -->
-<!-- Suggested label: torus_pointcloud_and_diagram.png -->
 
 ---
 
@@ -201,7 +202,7 @@ Both complexes recovered this signature. Note: the torus Rips/Alpha ratio (~4.6�
 **Requirements:** Python 3.8+, WSL or Linux/macOS recommended
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/tda-learning.git
+git clone https://github.com/declanecr/tda-learning.git
 cd tda-learning
 pip install -r requirements.txt
 jupyter lab
