@@ -74,7 +74,127 @@ tda-learning/
       <img width="1962" height="601" alt="circle_n50_ns0 05_pd+bc_th0 0" src="https://github.com/user-attachments/assets/716289ad-a62a-47df-92f2-c87d747bf037" />
       <img width="1962" height="601" alt="circle_n50_ns0 5_pd+bc_th0 0" src="https://github.com/user-attachments/assets/c959a774-0756-4e66-af85-47d352133a4c" />
 
+---
+## Stage 02 — Vietoris-Rips vs Alpha Complex Comparison
 
+**Core question:** Do complex choice and simplex count matter if the persistence diagrams are (nearly) the same?
+
+**What it does:**
+- Generates shared point clouds (noisy circle, torus) used by both complexes
+- Computes Rips PH via Ripser; Alpha PH via Gudhi
+- Compares simplex counts, runtimes, and filtration values
+- Inspects the Delaunay triangulation underlying Alpha using `scipy.spatial`
+- Quantifies diagram similarity via bottleneck and Wasserstein distances
+---
+### How they're built
+
+**Vietoris-Rips** adds an edge between two points whenever their distance ≤ ε, and fills in higher simplices whenever all pairwise edges exist. It has no awareness of geometry — it checks *all* pairwise distances. This causes simplex counts to grow as $O(n^k)$ for $k$-dimensional complexes.
+
+**Alpha** is constrained to the Delaunay triangulation. A simplex is only added at filtration value $\alpha$ if its circumsphere radius² ≤ $\alpha$ *and* the circumsphere contains no other points (the **empty circumsphere condition**). This geometric grounding keeps simplex counts at $O(n)$ in 2D/3D.
+
+> **Analogy:** Rips inflates a balloon uniformly around every point with no awareness of neighbours. Alpha is shrink-wrap — it only grows where the geometry says points are genuinely adjacent.
+
+<img width="865" height="1230" alt="Screenshot From 2026-05-18 13-43-11" src="https://github.com/user-attachments/assets/d5d28afa-f858-4c62-b122-b66539b767e2" />
+<img width="865" height="1230" alt="Screenshot From 2026-05-18 13-43-40" src="https://github.com/user-attachments/assets/c8b6b7ba-abe8-4913-9002-9977568328b3" />
+
+---
+
+### The Delaunay triangulation is Alpha's backbone
+
+Alpha cannot add any simplex that doesn't already exist in the Delaunay triangulation. At each filtration step, a Delaunay simplex is *admitted* only if its circumsphere has been reached. This means:
+- Alpha is a strict **subset** of the Delaunay triangulation at every ε
+- Rips can produce "geometrically impossible" simplices — triangles whose circumcircles contain other points — because it applies no such constraint
+
+<img width="865" height="1230" alt="image" src="https://github.com/user-attachments/assets/9fc4ad5a-d883-442a-8391-cf2537a0e603" />
+<img width="865" height="1230" alt="image" src="https://github.com/user-attachments/assets/1c8e7be7-8090-4acb-b29c-344860c3b707" />
+
+
+
+
+---
+
+### Simplex count comparison
+
+Rips simplex counts grew dramatically with sample size; Alpha grew near-linearly:
+
+| Dataset        | n   | Rips edges | Alpha simplices | Ratio  |
+| -------------- | --- | ---------- | --------------- | ------ |
+| Noisy circle   | 100 | 4462         | 555               | ~8×    |
+| Noisy circle   | 200 | 17154         | 1149               | ~15× |
+| Noisy circle   | 300 | 39710          | 1747               | ~23×   |
+| Torus          | 300 | 94044          | 12783               | ~7.4×  |
+
+> Fill in measured values from your notebook output.
+
+<!-- IMAGE: Bar chart or line plot of simplex count vs n for both complexes -->
+
+The downstream consequence: more simplices → larger boundary matrices → slower matrix reduction (the core PH algorithm) → higher RAM usage. Rips becomes computationally impractical before Alpha does on the same dataset.
+
+---
+
+### Filtration values are not directly comparable
+
+Rips filtration values are raw pairwise distances. Gudhi's Alpha filtration values are **squared circumradii** ($\alpha = r^2$), which is why they appear much smaller. Don't compare them numerically without accounting for this scaling.
+
+---
+
+### Despite different structures, diagrams are nearly identical
+
+The **Nerve Theorem** guarantees this: both complexes are valid approximations of the same underlying topological space (the union of balls at radius ε). Any "good cover" of that space yields the same persistent homology — so despite different simplex sets, they're triangulating the same shape.
+
+This was verified quantitatively using:
+- **Bottleneck distance** — smallest possible worst-case matched pair displacement between diagrams
+- **Wasserstein distance** — total displacement across all matched pairs (not just the worst one)
+
+A bottleneck distance much smaller than the signal bar's persistence confirms the diagrams are functionally equivalent.
+
+<!-- IMAGE: Side-by-side persistence diagrams (Rips vs Alpha) on the same axes for the noisy circle -->
+<!-- Suggested label: diagrams_rips_vs_alpha_circle.png -->
+
+<!-- IMAGE: Side-by-side persistence diagrams for the torus (should show H₀=1, H₁=2, H₂=1) -->
+<!-- Suggested label: diagrams_rips_vs_alpha_torus.png -->
+
+---
+
+### Torus topology recovery
+
+The torus has known Betti numbers: $\beta_0 = 1$, $\beta_1 = 2$, $\beta_2 = 1$.
+
+| Feature | Meaning                                      |
+| ------- | -------------------------------------------- |
+| $\beta_0 = 1$ | One connected component                |
+| $\beta_1 = 2$ | Two independent loops (short way and long way around the donut) |
+| $\beta_2 = 1$ | One enclosed void (the interior of the tube surface) |
+
+Both complexes recovered this signature. Note: the torus Rips/Alpha ratio (~4.6×) is lower than the circle — the torus is a 2D surface in 3D, so the Delaunay triangulation is still sparse relative to what Rips constructs, but less aggressively so than on a 1D curve.
+
+<!-- IMAGE: Torus point cloud (3D scatter) alongside its persistence diagram showing H₁=2, H₂=1 -->
+<!-- Suggested label: torus_pointcloud_and_diagram.png -->
+
+---
+
+### When to use which complex
+
+| Criterion              | Use Alpha                         | Use Rips                         |
+| ---------------------- | --------------------------------- | -------------------------------- |
+| Dimensionality         | 2D or 3D data                     | Any dimension                    |
+| Data type              | Geometric / spatial               | Abstract / high-dimensional      |
+| Sample size            | Large $n$ (efficiency matters)    | Small–medium $n$                 |
+| Filtration values      | Need geometric interpretability   | Distance-based is sufficient     |
+| Implementation         | Gudhi                             | Ripser                           |
+
+> **Limit of Alpha:** Delaunay triangulation in high dimensions is computationally intractable. For data beyond ~3D, Rips is the default.
+
+---
+
+### Key takeaways
+
+1. **Same topology, different structure** — Rips and Alpha are two roads to the same destination. The Nerve Theorem ensures they agree on what matters.
+2. **The simplex count gap is large and grows** — Alpha's geometric constraint keeps it $O(n)$; Rips blows up as $O(n^k)$.
+3. **Filtration values are not interchangeable** — Rips uses distances, Alpha uses squared circumradii.
+4. **Alpha is Delaunay-constrained** — it cannot add geometrically unjustified simplices. Rips can and does.
+5. **The persistence diagram is a record, not a live object** — features are born and die *during* filtration; the diagram captures when, not what's currently active.
+6. **High-dimensional data breaks Alpha** — Rips is the universal fallback when geometry can't be leveraged.
 
 ---
 ## Setup
