@@ -168,9 +168,9 @@ The torus has known Betti numbers: $\beta_0 = 1$, $\beta_1 = 2$, $\beta_2 = 1$.
 | $\beta_2 = 1$ | One enclosed void (the interior of the tube surface) |
 
 Both complexes recovered this signature. Note: the torus Rips/Alpha ratio (~7.4×) is lower than the circle at the same sample size (23x)— the torus is a 2D surface in 3D, so the Delaunay triangulation is still sparse relative to what Rips constructs, but less aggressively so than on a 1D curve.
-<img width="1611" height="1011" alt="Torus topology recovery - NO threshold" src="https://github.com/user-attachments/assets/a45c0547-21ae-4a3c-9126-cc69975e1bce" />
-<img width="1611" height="1011" alt="Torus topology recovery - Threshold" src="https://github.com/user-attachments/assets/ca72427b-bf19-4ac1-b20e-634dcd91ce6a" />
 
+<img width="1611" height="911" alt="Torus topology recovery - NO threshold" src="https://github.com/user-attachments/assets/6dd095f9-48f7-4286-9fa6-a4201c20249e" />
+<img width="1611" height="911" alt="Torus topology recovery - Threshold" src="https://github.com/user-attachments/assets/0c115631-1ea9-4854-8db6-3225dcf22196" />
 
 ---
 
