@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algebraic Evolution of Data</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --ink:    #0e0e14;
+  --paper:  #f5f3ee;
+  --warm:   #e8e2d5;
+  --rule:   #c8c0b0;
+  --faint:  #ddd8ce;
+  --c0: #1a1a2e; /* set theory */
+  --c1: #16213e; /* metric */
+  --c2: #0f3460; /* simplicial */
+  --c3: #533483; /* chain groups */
+  --c4: #e94560; /* boundary maps */
+  --c5: #f5a623; /* homology */
+  --c6: #2ecc71; /* persistence */
+  --c7: #3498db; /* barcode */
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle grid paper texture */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(var(--faint) 1px, transparent 1px),
+    linear-gradient(90deg, var(--faint) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events:none; z-index:0;
+}
+
+.page {
+  position:relative; z-index:1;
+  max-width:1100px;
+  margin:0 auto;
+  padding:60px 32px 100px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.hd {
+  margin-bottom:56px;
+  display:flex; align-items:flex-end; justify-content:space-between;
+  border-bottom:2px solid var(--ink);
+  padding-bottom:16px;
+}
+
+.hd-left {}
+
+.hd-eyebrow {
+  font-size:10px; letter-spacing:.25em; text-transform:uppercase;
+  color:#888; margin-bottom:6px;
+}
+
+.hd-title {
+  font-family:'Instrument Serif', serif;
+  font-size:clamp(28px,4vw,44px);
+  line-height:1.1; font-weight:400;
+}
+
+.hd-title em { font-style:italic; }
+
+.hd-right {
+  font-size:10px; color:#aaa; text-align:right; line-height:1.8;
+}
+
+/* ── Node card ───────────────────────────────────────────────────── */
+.flow {
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+
+.node {
+  display:grid;
+  grid-template-columns: 260px 1fr 220px;
+  gap:0;
+  border:1px solid var(--rule);
+  background:white;
+  transition: box-shadow .2s;
+  animation: slideIn .5s ease both;
+}
+
+.node:hover { box-shadow: 4px 4px 0 var(--ink); }
+
+@keyframes slideIn {
+  from { opacity:0; transform:translateX(-12px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+.node:nth-child(1)  { animation-delay:.05s }
+.node:nth-child(3)  { animation-delay:.10s }
+.node:nth-child(5)  { animation-delay:.15s }
+.node:nth-child(7)  { animation-delay:.20s }
+.node:nth-child(9)  { animation-delay:.25s }
+.node:nth-child(11) { animation-delay:.30s }
+.node:nth-child(13) { animation-delay:.35s }
+.node:nth-child(15) { animation-delay:.40s }
+
+/* Left accent panel */
+.node-accent {
+  padding:22px 18px;
+  border-right:1px solid var(--rule);
+  display:flex; flex-direction:column; justify-content:space-between;
+}
+
+.node-tag {
+  font-size:8px; letter-spacing:.18em; text-transform:uppercase;
+  color:white; padding:3px 8px; display:inline-block;
+  margin-bottom:10px; width:fit-content;
+}
+
+.node-name {
+  font-family:'Instrument Serif', serif;
+  font-size:18px; line-height:1.25;
+  color:var(--ink);
+}
+
+.node-name em { font-style:italic; }
+
+.node-field {
+  font-size:9px; color:#999; margin-top:8px; letter-spacing:.05em;
+}
+
+/* Center content */
+.node-body {
+  padding:22px 24px;
+  border-right:1px solid var(--rule);
+}
+
+.node-desc {
+  font-size:11px; line-height:1.7; color:#444; margin-bottom:12px;
+}
+
+.node-formula {
+  font-size:13px; color:var(--ink);
+  background:var(--warm);
+  border-left:3px solid var(--rule);
+  padding:8px 12px;
+  line-height:1.6;
+  white-space:pre;
+}
+
+/* Right canvas panel */
+.node-visual {
+  padding:14px;
+  display:flex; flex-direction:column; gap:6px;
+}
+
+.node-visual-label {
+  font-size:8px; letter-spacing:.15em; text-transform:uppercase;
+  color:#aaa; text-align:center;
+}
+
+.node-canvas {
+  display:block; width:100%;
+  border:1px solid var(--faint);
+  background: var(--warm);
+}
+
+/* ── Connectors ─────────────────────────────────────────────────── */
+.connector {
+  display:flex; align-items:stretch;
+  height:48px;
+  animation: fadeIn .3s ease both;
+}
+
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.conn-left {
+  width:260px; flex-shrink:0;
+  display:flex; align-items:center;
+  padding:0 18px;
+  border-left:1px solid var(--rule);
+  border-right:1px solid var(--rule);
+}
+
+.conn-arrow-wrap {
+  flex:1;
+  display:flex; align-items:center; gap:10px;
+  padding:0 24px;
+  border-right:1px solid var(--rule);
+}
+
+.conn-line {
+  flex:1; height:1px;
+  border-top:1px dashed var(--rule);
+}
+
+.conn-label {
+  font-size:9px; letter-spacing:.1em; text-transform:uppercase;
+  color:#aaa; white-space:nowrap;
+}
+
+.conn-arrow {
+  font-size:16px; color:var(--rule);
+}
+
+.conn-right { width:220px; }
+
+/* vertical tick in left panel */
+.conn-tick {
+  width:1px; height:100%;
+  background: var(--rule);
+  margin:0 auto;
+}
+
+/* ── Barcode visual ─────────────────────────────────────────────── */
+.barcode-wrap {
+  padding:10px 0 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width:800px) {
+  .node { grid-template-columns: 1fr; }
+  .node-accent { border-right:none; border-bottom:1px solid var(--rule); }
+  .node-body { border-right:none; border-bottom:1px solid var(--rule); }
+  .node-canvas { height:120px; }
+  .conn-left, .conn-right { display:none; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hd">
+    <div class="hd-left">
+      <div class="hd-eyebrow">Algebraic Topology → TDA</div>
+      <h1 class="hd-title">Evolution of Data<br>into <em>Algebraic Objects</em></h1>
+    </div>
+    <div class="hd-right">
+      example: X = {A,B,C,D} ⊂ ℝ²<br>
+      A=(0,0)  B=(1,0)<br>
+      C=(0.5,0.8)  D=(3,0)
+    </div>
+  </div>
+
+  <div class="flow" id="flow"></div>
+
+</div>
+
+<script>
+// ── Palette (one color per layer) ─────────────────────────────────
+const PALETTE = [
+  '#2b2d42', // 0 Set / Point Cloud
+  '#5c4a8a', // 1 Metric Space
+  '#1a6b8a', // 2 Simplicial Complex
+  '#2a7a4b', // 3 Chain Groups
+  '#b85c1a', // 4 Boundary Maps
+  '#8a1a2e', // 5 Homology Groups
+  '#1a4a8a', // 6 Persistence Module
+  '#3a2a6a', // 7 Barcode
+];
+
+// ── Canvas draw functions ─────────────────────────────────────────
+
+function getPts(W, H) {
+  const sc = Math.min(W,H)*0.30, ox=W*0.12, oy=H*0.62;
+  return {
+    A:[ox, oy],
+    B:[ox+sc, oy],
+    C:[ox+sc*0.5, oy-sc*0.85],
+    D:[ox+sc*2.8, oy],
+  };
+}
+
+function clear(ctx,W,H,bg='#f7f4ee') {
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+}
+
+function dot(ctx,p,r=4,c='#0e0e14') {
+  ctx.beginPath(); ctx.arc(p[0],p[1],r,0,Math.PI*2);
+  ctx.fillStyle=c; ctx.fill();
+}
+
+function ln(ctx,p1,p2,c='#888',w=1.5,alpha=1,dash=[]) {
+  ctx.save(); ctx.globalAlpha=alpha;
+  ctx.strokeStyle=c; ctx.lineWidth=w; ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+}
+
+function label(ctx,t,x,y,c='#0e0e14',sz=10) {
+  ctx.fillStyle=c; ctx.font=`${sz}px 'DM Mono',monospace`; ctx.fillText(t,x,y);
+}
+
+function ball(ctx,cx,cy,r,c) {
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.fillStyle=c+'18'; ctx.fill();
+  ctx.strokeStyle=c+'55'; ctx.lineWidth=1;
+  ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+}
+
+function triF(ctx,p1,p2,p3,fc,sc2) {
+  ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.lineTo(p3[0],p3[1]); ctx.closePath();
+  ctx.fillStyle=fc; ctx.fill();
+  ctx.strokeStyle=sc2; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+// Draw all 4 base points with labels
+function basePoints(ctx,p,activeColor='#2b2d42') {
+  Object.entries(p).forEach(([k,v]) => {
+    dot(ctx,v,4,activeColor);
+    label(ctx,k,v[0]+5,v[1]-5,'#555',9);
+  });
+}
+
+// ── Individual renderers ──────────────────────────────────────────
+
+function drawPointCloud(canvas) {
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  const p=getPts(W,H);
+  clear(ctx,W,H);
+  // faint distance lines
+  [['A','B'],['A','C'],['B','C'],['A','D']].forEach(([a,b])=>{
+    ln(ctx,p[a],p[b],'#ccc',1,1,[2,4]);
+  });
+  basePoints(ctx,p,'#2b2d42');
+  label(ctx,'X = {A, B, C, D} ⊂ ℝ²',4,H-7,'#aaa',8);
+}
+
+function drawMetric(canvas) {
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  const p=getPts(W,H);
+  clear(ctx,W,H);
+  const pairs=[['A','B',1.00],['A','C',0.94],['B','C',0.94],['A','D',3.00]];
+  pairs.forEach(([a,b,d])=>{
+    ln(ctx,p[a],p[b],'#5c4a8a',1.2,0.6);
+    const mx=(p[a][0]+p[b][0])/2, my=(p[a][1]+p[b][1])/2;
+    label(ctx,d.toFixed(2),mx+2,my-3,'#888',8);
+  });
+  basePoints(ctx,p,'#5c4a8a');
+  label(ctx,'d(A,B)=1.0  d(A,D)=3.0',4,H-7,'#aaa',8);
+}
+
+function drawSimplicial(canvas, r=0.6) {
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  const p=getPts(W,H);
+  const sc=Math.min(W,H)*0.30;
+  clear(ctx,W,H);
+  Object.values(p).forEach(pt=>ball(ctx,pt[0],pt[1],r*sc,'#1a6b8a'));
+  const hasAB=2*r>=1.00,hasAC=2*r>=0.94,hasBC=2*r>=0.94,hasAD=2*r>=3.00;
+  if(hasAB&&hasAC&&hasBC) triF(ctx,p.A,p.B,p.C,'rgba(26,107,138,0.12)','#1a6b8a');
+  if(hasAB) ln(ctx,p.A,p.B,'#1a6b8a',1.5);
+  if(hasAC) ln(ctx,p.A,p.C,'#1a6b8a',1.5);
+  if(hasBC) ln(ctx,p.B,p.C,'#1a6b8a',1.5);
+  if(hasAD) ln(ctx,p.A,p.D,'#1a6b8a',1.5);
+  basePoints(ctx,p,'#1a6b8a');
+  label(ctx,`K at r=${r.toFixed(1)}`,4,H-7,'#aaa',8);
+}
+
+function drawChainGroups(canvas) {
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  const p=getPts(W,H);
+  clear(ctx,W,H);
+  // draw the complex at r=0.6
+  ln(ctx,p.A,p.B,'#2a7a4b',1.5);
+  ln(ctx,p.A,p.C,'#2a7a4b',1.5);
+  ln(ctx,p.B,p.C,'#2a7a4b',1.5);
+  basePoints(ctx,p,'#2a7a4b');
+  // chain group annotations
+  const rows=[
+    ['C₀','span{A,B,C,D}','dim=4','#1a4a8a'],
+    ['C₁','span{AB,AC,BC}','dim=3','#2a7a4b'],
+    ['C₂','0','dim=0','#aaa'],
+  ];
+  rows.forEach(([name,basis,dim,c],i)=>{
+    const y=14+i*16;
+    label(ctx,name,4,y,c,9);
+    label(ctx,basis,26,y,'#666',8);
+    label(ctx,dim,W-42,y,c,8);
+  });
+  label(ctx,'at r = 0.6',4,H-7,'#aaa',8);
+}
+
+function drawBoundaryMaps(canvas) {
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  const p=getPts(W,H);
+  clear(ctx,W,H);
+  triF(ctx,p.A,p.B,p.C,'rgba(184,92,26,0.10)','#b85c1a');
+  ln(ctx,p.A,p.B,'#e63',2);
+  ln(ctx,p.A,p.C,'#b85c1a',2);
+  ln(ctx,p.B,p.C,'#c47',2);
+  basePoints(ctx,p,'#b85c1a');
+  label(ctx,'∂₂(ABC)=AB+AC+BC',4,12,'#b85c1a',8);
+  label(ctx,'∂₁(AB)=A+B',4,22,'#e63',8);
+  label(ctx,'∂²=0  ✓',4,H-7,'#aaa',8);
+}
+
+function drawHomology(canvas) {
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  const p=getPts(W,H);
+  clear(ctx,W,H);
+  // show the loop (H₁) as a highlighted cycle
+  triF(ctx,p.A,p.B,p.C,'rgba(138,26,46,0.08)','#8a1a2e');
+  ln(ctx,p.A,p.B,'#8a1a2e',2);
+  ln(ctx,p.A,p.C,'#8a1a2e',2);
+  ln(ctx,p.B,p.C,'#8a1a2e',2);
+  basePoints(ctx,p,'#8a1a2e');
+  // Betti annotations
+  label(ctx,'β₀=2 (components: A,D)',4,13,'#8a1a2e',8);
+  label(ctx,'β₁=1 (loop ABC)',4,23,'#8a1a2e',8);
+  label(ctx,'H₁=ker∂₁/im∂₂',4,H-7,'#aaa',8);
+}
+
+function drawPersistenceModule(canvas) {
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  clear(ctx,W,H,'#f7f4ee');
+
+  // Draw the module as boxes connected by arrows
+  const stages=[
+    {r:'0',   h1:'0',  x:12},
+    {r:'0.6', h1:'𝔽₂', x:80},
+    {r:'0.9', h1:'𝔽₂', x:148},
+    {r:'1.0', h1:'0',  x:178},
+  ];
+
+  const y=H/2-12, bw=36, bh=24;
+  stages.forEach((s,i)=>{
+    const fill = s.h1==='𝔽₂' ? 'rgba(26,74,138,0.15)' : '#f0ede6';
+    ctx.fillStyle=fill;
+    ctx.strokeStyle='#ccc'; ctx.lineWidth=1;
+    ctx.fillRect(s.x,y,bw,bh);
+    ctx.strokeRect(s.x,y,bw,bh);
+    label(ctx,s.h1,s.x+5,y+16,s.h1==='𝔽₂'?'#1a4a8a':'#bbb',10);
+    label(ctx,'r='+s.r,s.x,y+bh+10,'#aaa',7);
+    // arrow to next
+    if(i<stages.length-1){
+      const nx=stages[i+1].x;
+      ln(ctx,[s.x+bw,y+bh/2],[nx,y+bh/2],'#ccc',1);
+      // arrowhead
+      ctx.fillStyle='#ccc';
+      ctx.beginPath(); ctx.moveTo(nx,y+bh/2); ctx.lineTo(nx-6,y+bh/2-3); ctx.lineTo(nx-6,y+bh/2+3); ctx.fill();
+    }
+  });
+
+  label(ctx,'H₁ across filtration',4,13,'#1a4a8a',8);
+  label(ctx,'module over 𝔽[t] (PID)',4,H-7,'#aaa',8);
+}
+
+function drawBarcode(canvas) {
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  clear(ctx,W,H,'#f7f4ee');
+
+  const maxR=1.6, pad=28, bw=W-pad*2;
+
+  // axis
+  ctx.strokeStyle='#ccc'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad,H-18); ctx.lineTo(W-pad,H-18); ctx.stroke();
+  [0,0.5,1.0,1.5].forEach(v=>{
+    const x=pad+(v/maxR)*bw;
+    ctx.strokeStyle='#ddd'; ctx.beginPath(); ctx.moveTo(x,H-21); ctx.lineTo(x,H-14); ctx.stroke();
+    label(ctx,v.toFixed(1),x-5,H-8,'#aaa',7);
+  });
+
+  const bars=[
+    {nm:'H₀ A', b:0, d:maxR, c:'#2b2d42', inf:true},
+    {nm:'H₀ D', b:0, d:maxR, c:'#2b2d42', inf:true},
+    {nm:'H₀ B', b:0, d:0.6,  c:'#5c4a8a', inf:false},
+    {nm:'H₀ C', b:0, d:0.6,  c:'#5c4a8a', inf:false},
+    {nm:'H₁',   b:0.6,d:1.0, c:'#8a1a2e', inf:false},
+  ];
+
+  bars.forEach((bar,i)=>{
+    const y=10+i*13;
+    const x1=pad+(bar.b/maxR)*bw;
+    const x2=bar.inf ? W-pad+5 : pad+(bar.d/maxR)*bw;
+    ctx.fillStyle=bar.c;
+    ctx.fillRect(x1,y,x2-x1,8);
+    if(bar.inf){
+      ctx.beginPath(); ctx.moveTo(W-pad+5,y+4); ctx.lineTo(W-pad,y); ctx.lineTo(W-pad,y+8); ctx.fill();
+    }
+    label(ctx,bar.nm,4,y+7,bar.c,7);
+  });
+}
+
+// ── Step definitions ──────────────────────────────────────────────
+
+const STEPS = [
+  {
+    tag:'Layer 0', name:'Point Cloud', field:'Set Theory',
+    color: PALETTE[0],
+    desc:'A finite set X = {x₁,...,xₙ} ⊂ ℝᵈ. No structure beyond membership — just points in space. The foundation everything is built on.',
+    formula:
+`X = { A, B, C, D }  ⊂  ℝ²
+A=(0,0)  B=(1,0)
+C=(0.5, 0.8)  D=(3,0)
+
+Object: Set   Structure: none`,
+    draw: drawPointCloud,
+    vizLabel:'Point cloud',
+    arrow:'equip with metric d: X×X→ℝ',
+  },
+  {
+    tag:'Layer 1', name:'Metric Space', field:'Topology — Point-Set',
+    color: PALETTE[1],
+    desc:'Add a distance function d satisfying non-negativity, symmetry, triangle inequality. This induces a topology via open balls and drives the filtration parameter.',
+    formula:
+`(X, d)  where  d(x,y) = Euclidean
+
+d(A,B) = 1.00    d(A,C) = 0.94
+d(B,C) = 0.94    d(A,D) = 3.00
+
+Object: Metric Space   Structure: distance`,
+    draw: drawMetric,
+    vizLabel:'Pairwise distances',
+    arrow:'build Vietoris-Rips complex at each r',
+  },
+  {
+    tag:'Layer 2', name:'Simplicial Complex', field:'Algebraic Topology',
+    color: PALETTE[2],
+    desc:'For each scale r, assemble vertices/edges/triangles satisfying the closure condition (every face of every simplex must be present). Together these form a filtration K₀⊆K₁⊆...⊆Kₙ.',
+    formula:
+`K_{0.6}: vertices {A,B,C,D}
+         edges    {AB,AC,BC}
+         (D isolated — d(A,D)=3.0 >> 2r)
+
+K_{1.0}: + edges {AD,BD,CD}
+         + triangle {ABC}
+
+Object: Simplicial Complex   Structure: faces`,
+    draw: (c) => drawSimplicial(c, 0.6),
+    vizLabel:'K at r=0.6 (balls shown)',
+    arrow:'span vector spaces over each set of n-simplices',
+  },
+  {
+    tag:'Layer 3', name:'Chain Groups  Cₙ', field:'Abstract Algebra — Group/Field Theory',
+    color: PALETTE[3],
+    desc:'For each dimension n, form a vector space Cₙ over 𝔽₂ = {0,1} spanned by n-simplices. Addition is XOR (every element is its own inverse). This is a free abelian group — the algebraic home of simplices.',
+    formula:
+`C₀ = 𝔽₂{A, B, C, D}      dim = 4
+C₁ = 𝔽₂{AB, AC, BC}      dim = 3
+C₂ = 𝔽₂{ABC}              dim = 1
+
+Chain complex:
+0 → C₂ →∂₂  C₁ →∂₁  C₀ → 0
+0 →  𝔽₂  →   𝔽₂³  →  𝔽₂⁴ → 0`,
+    draw: drawChainGroups,
+    vizLabel:'Chain groups at r=0.6',
+    arrow:'define linear maps ∂ₙ: Cₙ → Cₙ₋₁',
+  },
+  {
+    tag:'Layer 4', name:'Boundary Maps  ∂ₙ', field:'Linear Algebra — Homomorphisms',
+    color: PALETTE[4],
+    desc:'The boundary map ∂ₙ is a linear map (group homomorphism) sending each simplex to the formal sum of its faces. The critical property ∂²=0 makes im∂ₙ₊₁ ⊆ ker∂ₙ — required for the quotient to be well-defined.',
+    formula:
+`∂₁(AB)  = A + B
+∂₁(AC)  = A + C
+∂₁(BC)  = B + C
+∂₂(ABC) = AB + AC + BC
+
+∂²=0: ∂₁(∂₂(ABC)) = 2A+2B+2C = 0 ✓
+      (mod 2 arithmetic)`,
+    draw: drawBoundaryMaps,
+    vizLabel:'∂₂(triangle)=perimeter',
+    arrow:'take quotient: ker∂ₙ / im∂ₙ₊₁',
+  },
+  {
+    tag:'Layer 5', name:'Homology Groups  Hₙ', field:'Abstract Algebra — Quotient Groups',
+    color: PALETTE[5],
+    desc:'Hₙ = ker∂ₙ / im∂ₙ₊₁. Cycles (ker∂) that are not boundaries (im∂) represent genuine holes. Since 𝔽₂ is a field, Hₙ is a vector space — its dimension is the Betti number βₙ.',
+    formula:
+`H₀ = ker∂₀/im∂₁   β₀ = 2  (A, D)
+H₁ = ker∂₁/im∂₂   β₁ = 1  (loop ABC)
+H₂ = 0             β₂ = 0
+
+Hₙ = ker∂ₙ / im∂ₙ₊₁
+     (n-cycles) / (n-boundaries)`,
+    draw: drawHomology,
+    vizLabel:'β₀=2 components, β₁=1 loop',
+    arrow:'package into functor over filtration',
+  },
+  {
+    tag:'Layer 6', name:'Persistence Module', field:'Module Theory / Category Theory',
+    color: PALETTE[6],
+    desc:'The sequence of Hₙ groups across the filtration forms a functor F:(ℝ,≤)→Vect. Over 𝔽[t] (a PID), this is a graded module. The Structure Theorem guarantees a unique decomposition into intervals.',
+    formula:
+`F: (ℝ,≤) → Vect
+r ↦ Hₙ(Kᵣ)
+
+Over 𝔽[t]:  F ≅ ⊕ᵢ 𝔽[t]  ⊕  ⊕ⱼ 𝔽[t]/(t^(dⱼ-bⱼ))
+               free (∞ bars)    torsion (finite bars)
+
+H₁ module ≅ 𝔽[t]/(t^0.4) → bar [0.6, 1.0)`,
+    draw: drawPersistenceModule,
+    vizLabel:'H₁ module across filtration',
+    arrow:'read off intervals → barcode',
+  },
+  {
+    tag:'Layer 7', name:'Barcode / Persistence Diagram', field:'Persistent Homology — Output',
+    color: PALETTE[7],
+    desc:'The complete invariant. Each bar [b,d) = one topological feature. Persistence = d−b. Stability theorem: dB(Dgm(f),Dgm(g)) ≤ ‖f−g‖∞ — long bars are robust features, short bars are noise.',
+    formula:
+`H₀: A [0,∞)   D [0,∞)    (2 components)
+H₀: B [0,0.6) C [0,0.6)  (merge at r=0.6)
+H₁:   [0.6,1.0)           (loop, persist=0.4)
+
+Stability: dB ≤ ‖f−g‖∞
+Long bar (0.4) >> noise threshold`,
+    draw: drawBarcode,
+    vizLabel:'Barcode: H₀ (dark) + H₁ (red)',
+    arrow:null,
+  },
+];
+
+// ── Render pipeline ───────────────────────────────────────────────
+
+function build() {
+  const flow = document.getElementById('flow');
+
+  STEPS.forEach((step, i) => {
+    // Node
+    const node = document.createElement('div');
+    node.className = 'node';
+    node.style.animationDelay = `${0.05 + i*0.06}s`;
+
+    node.innerHTML = `
+      <div class="node-accent">
+        <div>
+          <div class="node-tag" style="background:${step.color}">${step.tag}</div>
+          <div class="node-name">${step.name}</div>
+          <div class="node-field">${step.field}</div>
+        </div>
+      </div>
+      <div class="node-body">
+        <div class="node-desc">${step.desc}</div>
+        <div class="node-formula">${step.formula}</div>
+      </div>
+      <div class="node-visual">
+        <div class="node-visual-label">${step.vizLabel}</div>
+        <canvas class="node-canvas" width="220" height="140"></canvas>
+      </div>
+    `;
+
+    flow.appendChild(node);
+
+    // Draw canvas
+    const canvas = node.querySelector('.node-canvas');
+    // Slight delay so canvas is laid out
+    setTimeout(() => step.draw(canvas), 10 + i*5);
+
+    // Connector
+    if (step.arrow) {
+      const conn = document.createElement('div');
+      conn.className = 'connector';
+      conn.style.animationDelay = `${0.08 + i*0.06}s`;
+      conn.innerHTML = `
+        <div class="conn-left">
+          <div class="conn-tick"></div>
+        </div>
+        <div class="conn-arrow-wrap">
+          <div class="conn-line"></div>
+          <span class="conn-arrow" style="color:${step.color}">▼</span>
+          <div class="conn-label" style="color:${step.color}">${step.arrow}</div>
+          <div class="conn-line"></div>
+        </div>
+        <div class="conn-right"></div>
+      `;
+      flow.appendChild(conn);
+    }
+  });
+}
+
+build();
+</script>
+</body>
+</html>
