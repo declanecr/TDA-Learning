@@ -146,7 +146,7 @@ plot_noise_experiment(
     mode='h1only',
 )
 ```
-```
+```python
 from tda import generate_point_cloud, render_point_cloud
 
 torus = generate_point_cloud('torus', n_points=300, noise=0.05)
