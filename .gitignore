@@ -3,5 +3,7 @@ OBSIDIAN Summer 2026/
 *.ods
 *.ods#
 **/.ipynb_checkpoints/
+**/__pycache__/
+**/*.pyc
 **/tda_outputs/
 Other-Resources/
