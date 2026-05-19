@@ -14,7 +14,7 @@ This repo documents a five-stage learning roadmap — from pipeline basics throu
 | ----- | ---------------------------------------------------------------------------------- | ----------- |
 | 01    | **Pipeline Fluency** — Noisy circle, Ripser, H₀/H₁, barcodes, persistence diagrams | ✅ Complete  |
 | 02    | **Complex Comparison** — Vietoris-Rips vs Alpha complexes                          | ✅ Complete  |
-| 03    | **Geometric Interpretation** — Torus, MNIST digits, Betti numbers                  | 🔲 Upcoming |
+| 03    | **Geometric Interpretation** — Torus, MNIST digits, Betti numbers                  | ⌛ In Progress
 | 04    | **Real Data** — RCSB PDB proteins, OpenTopography terrain                          | 🔲 Upcoming |
 | 05    | **ML Integration** — Persistence images as classifier features                     | 🔲 Upcoming |
 ---
