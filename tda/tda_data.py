@@ -3,7 +3,7 @@ tda.tda_data — pure computation layer, no matplotlib.
 
 Public API
 ----------
-generate_point_cloud(shape, n_points, noise) -> ndarray
+generate_point_cloud(shape, n_points, noise) -> ndarray   # 'circle'|'torus'|'sphere'|'figure8'|'mnist'
 compute_rips(pts, max_dim)                   -> RipsResult
 compute_alpha(pts, max_dim)                  -> AlphaResult
 compute_both(shape, n_points, noise, max_dim)-> BothResult
@@ -53,11 +53,25 @@ class BothResult:
 
 # ── Point cloud generation ────────────────────────────────────────────────────
 
+def _generate_mnist_pixels(digit: int, instance: int, noise: float) -> np.ndarray:
+    """Return (col, row) coordinates of non-zero pixels from an sklearn digit image."""
+    from sklearn.datasets import load_digits
+    data = load_digits()
+    idx = np.where(data.target == digit)[0][instance]
+    img = data.images[idx]  # (8, 8), values 0–16
+    rows, cols = np.where(img > 0)
+    pts = np.column_stack([cols.astype(float), rows.astype(float)])
+    if noise > 0:
+        pts += np.random.randn(*pts.shape) * noise
+    return pts
+
+
 def generate_point_cloud(shape: str, n_points: int, noise: float) -> np.ndarray:
     """
     Return a noisy point cloud sampled from the given shape.
 
-    shape : 'circle' | 'torus' | 'sphere'
+    shape     : 'circle' | 'torus' | 'sphere' | 'figure8' | 'mnist'
+    n_points  : number of sample points (for 'mnist', the digit class 0–9 instead)
     """
     if shape == 'circle':
         return tadasets.dsphere(n=n_points, d=1, r=1, noise=noise)
@@ -65,7 +79,13 @@ def generate_point_cloud(shape: str, n_points: int, noise: float) -> np.ndarray:
         return tadasets.torus(n=n_points, c=2, a=1, noise=noise)
     if shape == 'sphere':
         return tadasets.dsphere(n=n_points, d=2, r=1, noise=noise)
-    raise ValueError(f"Unknown shape {shape!r}. Choose: 'circle', 'torus', 'sphere'.")
+    if shape == 'figure8':
+        return tadasets.infty_sign(n=n_points, noise=noise)
+    if shape == 'mnist':
+        return _generate_mnist_pixels(digit=n_points, instance=0, noise=noise)
+    raise ValueError(
+        f"Unknown shape {shape!r}. Choose: 'circle', 'torus', 'sphere', 'figure8', 'mnist'."
+    )
 
 
 # ── Persistence computation ───────────────────────────────────────────────────
