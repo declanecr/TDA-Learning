@@ -24,6 +24,11 @@ This repo documents a five-stage learning roadmap — from pipeline basics throu
 tda-learning/
 ├── README.md
 ├── requirements.txt
+├── tda/                            # Shared TDA utilities package
+│   ├── __init__.py                 # Re-exports full public API
+│   ├── tda_data.py                 # Pure computation layer (no matplotlib)
+│   ├── tda_viz.py                  # Atomic ax-level renderers
+│   └── tda_figures.py              # GridSpec figure orchestrators
 ├── portfolio/
 │   └── tda-portfolio.html          # Visual project tracker
 ├── stage-01-pipeline-fluency/
@@ -33,6 +38,8 @@ tda-learning/
 ├── stage-04-real-data/
 └── stage-05-ml-integration/
 ```
+
+The `tda/` package is a three-layer library extracted from the notebooks. All stage notebooks import from it rather than re-implementing computation or plotting inline. See [`tda/README.md`](tda/README.md) for a full API reference.
 ---
 ## Stage 01 — Noist Circle $H_1$ Recovery
 **Core question:** Can persistent homology recover the circular structure of a point cloud under increasing noise?
