@@ -46,50 +46,16 @@ Everything in the public API is re-exported from `tda/__init__.py`, so a single 
 
 ### Functions
 
-```
-generate_point_cloud(shape, n_points, noise) -> ndarray
-```
-Returns a noisy 2D/3D point cloud. `shape` is `'circle'`, `'torus'`, or `'sphere'`.
-
-```
-compute_rips(pts, max_dim=2) -> RipsResult
-```
-Runs Ripser on `pts` and wraps the output.
-
-```
-compute_alpha(pts, max_dim=2) -> AlphaResult
-```
-Runs GUDHI `AlphaComplex`. Filtration values are in GUDHI units: **α = r²** (squared circumradius), not `r`.
-
-```
-compute_both(shape, n_points, noise, max_dim=2) -> BothResult
-```
-Convenience wrapper: generates a point cloud, runs both Rips and Alpha, returns everything in one object.
-
-```
-filter_diagrams(dgms, threshold) -> list[ndarray]
-```
-Drops finite bars with persistence ≤ `threshold`. Infinite bars (essential classes) are always kept. Pass `threshold=0` to skip.
-
-```
-h1_stats(dgms) -> (int, float)
-```
-Returns `(finite H1 bar count, max H1 persistence)`.
-
-```
-auto_alpha_value(dgms_alpha) -> float
-```
-Returns the birth value of the top-persistence finite H1 bar (in GUDHI r² units). Used to pick a sensible default for geometric overlays.
-
-```
-diagram_distances(dgms_rips, dgms_alpha) -> dict
-```
-Computes bottleneck and Wasserstein-1 distances between Rips and Alpha diagrams per homology dimension. Returns:
-```python
-{dim: {'bottleneck': float, 'wasserstein': float,
-       'bn_match': ndarray, 'ws_match': ndarray,
-       'd_rips': ndarray, 'd_alpha': ndarray}}
-```
+| Function | Description |
+|---|---|
+| `generate_point_cloud(shape, n_points, noise)` | Returns a noisy 2D/3D point cloud. `shape` is `'circle'`, `'torus'`, or `'sphere'`. |
+| `compute_rips(pts, max_dim=2)` | Runs Ripser on `pts` and returns a `RipsResult`. |
+| `compute_alpha(pts, max_dim=2)` | Runs GUDHI `AlphaComplex`. Filtration values are in GUDHI units: **α = r²** (squared circumradius), not `r`. Returns an `AlphaResult`. |
+| `compute_both(shape, n_points, noise, max_dim=2)` | Convenience wrapper: generates a point cloud, runs both Rips and Alpha, returns a `BothResult`. |
+| `filter_diagrams(dgms, threshold)` | Drops finite bars with persistence ≤ `threshold`. Infinite bars (essential classes) are always kept. Pass `threshold=0` to skip. |
+| `h1_stats(dgms)` | Returns `(finite H1 bar count, max H1 persistence)`. |
+| `auto_alpha_value(dgms_alpha)` | Returns the birth value of the top-persistence finite H1 bar (in GUDHI r² units). Used to pick a sensible default for geometric overlays. |
+| `diagram_distances(dgms_rips, dgms_alpha)` | Computes bottleneck and Wasserstein-1 distances between Rips and Alpha diagrams per homology dimension. Returns `{dim: {'bottleneck', 'wasserstein', 'bn_match', 'ws_match', 'd_rips', 'd_alpha'}}`. |
 
 ---
 
