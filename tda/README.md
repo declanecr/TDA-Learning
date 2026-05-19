@@ -146,6 +146,19 @@ plot_noise_experiment(
     mode='h1only',
 )
 ```
+```
+from tda import generate_point_cloud, render_point_cloud
+
+torus = generate_point_cloud('torus', n_points=300, noise=0.05)
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+render_point_cloud(torus, ax, title="torus")
+plt.show()
+```
+<img width="410" height="421" alt="image" src="https://github.com/user-attachments/assets/4e8f2ce3-e764-4e96-bada-23a91b7d4698" />
+
+
+
 
 ---
 
