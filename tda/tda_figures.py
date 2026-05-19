@@ -11,6 +11,8 @@ plot_complex_comparison(result, threshold, representations)
 plot_geometric(pts, alpha_value, shape, noise, circumsphere, circumcenter, seed)
 plot_alpha_vr_comparison(pts, alpha_value, shape, noise, circumcenter, seed)
 plot_distance_comparison(result)
+plot_rips_comparison(result_a, result_b, label_a, label_b)
+plot_alpha_comparison(result_a, result_b, label_a, label_b, alpha_value_a, alpha_value_b)
 plot_full_analysis(result, threshold, alpha_value, circumcenter, seed)
 print_distance_table(distances)
 """
@@ -332,6 +334,151 @@ def plot_distance_comparison(result: BothResult) -> None:
         for dim, d in distances.items()
     ]
     fig.suptitle("  ·  ".join(dist_lines), fontsize=10)
+    plt.show()
+
+
+def plot_rips_comparison(
+    result_a: BothResult,
+    result_b: BothResult,
+    label_a: str = "Cloud A",
+    label_b: str = "Cloud B",
+) -> None:
+    """
+    3×2 figure comparing Rips diagrams from two point clouds:
+      Row 0: point cloud A      | point cloud B
+      Row 1: Rips PD A          | Rips PD B
+      Row 2: H1 Bottleneck      | H1 Wasserstein
+    Also prints the distance table to stdout.
+    """
+    distances = diagram_distances(result_a.rips.dgms, result_b.rips.dgms)
+
+    print(f"\nRips vs Rips — {label_a}  vs  {label_b}")
+    print_distance_table(distances)
+
+    is_3d = result_a.pts.shape[1] == 3
+    fig = plt.figure(figsize=(14, 14), layout='constrained')
+    gs = fig.add_gridspec(3, 2)
+
+    ax_ca = fig.add_subplot(gs[0, 0], projection='3d' if is_3d else None)
+    ax_cb = fig.add_subplot(gs[0, 1], projection='3d' if is_3d else None)
+    ax_pa = fig.add_subplot(gs[1, 0])
+    ax_pb = fig.add_subplot(gs[1, 1])
+    ax_bn = fig.add_subplot(gs[2, 0])
+    ax_ws = fig.add_subplot(gs[2, 1])
+
+    render_point_cloud(result_a.pts, ax_ca, title=label_a)
+    render_point_cloud(result_b.pts, ax_cb, title=label_b)
+    render_persistence_diagram(result_a.rips.dgms, ax_pa, title=f"Rips PD — {label_a}")
+    render_persistence_diagram(result_b.rips.dgms, ax_pb, title=f"Rips PD — {label_b}")
+
+    d1 = distances.get(1, {})
+    d_a_fin = d1.get('d_rips',  np.empty((0, 2)))
+    d_b_fin = d1.get('d_alpha', np.empty((0, 2)))
+    have_h1 = len(d_a_fin) > 0 or len(d_b_fin) > 0
+
+    if have_h1:
+        render_matching(d_a_fin, d_b_fin, d1['bn_match'], ax_bn,
+                        title=f"H1 Bottleneck  (dist={d1['bottleneck']:.4f})",
+                        label_a=label_a, label_b=label_b)
+        render_matching(d_a_fin, d_b_fin, d1['ws_match'], ax_ws,
+                        title=f"H1 Wasserstein  (dist={d1['wasserstein']:.4f})",
+                        label_a=label_a, label_b=label_b)
+    else:
+        for ax in (ax_bn, ax_ws):
+            ax.text(0.5, 0.5, "No H1 points to match",
+                    ha='center', va='center', transform=ax.transAxes,
+                    fontsize=12, color='gray')
+            ax.axis('off')
+
+    dist_lines = [
+        f"H{dim}: bn={d['bottleneck']:.4f}  ws={d['wasserstein']:.4f}"
+        for dim, d in distances.items()
+    ]
+    fig.suptitle(
+        f"Rips vs Rips  ·  {label_a}  vs  {label_b}\n" + "  ·  ".join(dist_lines),
+        fontsize=10,
+    )
+    plt.show()
+
+
+def plot_alpha_comparison(
+    result_a: BothResult,
+    result_b: BothResult,
+    label_a: str = "Cloud A",
+    label_b: str = "Cloud B",
+    alpha_value_a: float | None = None,
+    alpha_value_b: float | None = None,
+) -> None:
+    """
+    3×2 figure comparing Alpha diagrams from two point clouds:
+      Row 0: Alpha overlay A (2D) or point cloud A (3D) | same for B
+      Row 1: Alpha PD A                                 | Alpha PD B
+      Row 2: H1 Bottleneck                              | H1 Wasserstein
+    Also prints the distance table to stdout.
+
+    alpha_value_a/b : GUDHI r² units. Auto-derived from the top-persistence
+                      H1 bar if None.
+    """
+    if alpha_value_a is None:
+        alpha_value_a = auto_alpha_value(result_a.alpha.dgms)
+    if alpha_value_b is None:
+        alpha_value_b = auto_alpha_value(result_b.alpha.dgms)
+
+    distances = diagram_distances(result_a.alpha.dgms, result_b.alpha.dgms)
+
+    print(f"\nAlpha vs Alpha — {label_a}  vs  {label_b}")
+    print_distance_table(distances)
+
+    is_3d = result_a.pts.shape[1] == 3
+    fig = plt.figure(figsize=(14, 14), layout='constrained')
+    gs = fig.add_gridspec(3, 2)
+
+    ax_ca = fig.add_subplot(gs[0, 0], projection='3d' if is_3d else None)
+    ax_cb = fig.add_subplot(gs[0, 1], projection='3d' if is_3d else None)
+    ax_pa = fig.add_subplot(gs[1, 0])
+    ax_pb = fig.add_subplot(gs[1, 1])
+    ax_bn = fig.add_subplot(gs[2, 0])
+    ax_ws = fig.add_subplot(gs[2, 1])
+
+    if is_3d:
+        render_point_cloud(result_a.pts, ax_ca, title=label_a)
+        render_point_cloud(result_b.pts, ax_cb, title=label_b)
+    else:
+        render_alpha_overlay(result_a.pts, alpha_value_a, ax_ca)
+        ax_ca.set_title(f"{label_a}  (α={alpha_value_a:.4f})")
+        render_alpha_overlay(result_b.pts, alpha_value_b, ax_cb)
+        ax_cb.set_title(f"{label_b}  (α={alpha_value_b:.4f})")
+
+    render_persistence_diagram(result_a.alpha.dgms, ax_pa, title=f"Alpha PD — {label_a}")
+    render_persistence_diagram(result_b.alpha.dgms, ax_pb, title=f"Alpha PD — {label_b}")
+
+    d1 = distances.get(1, {})
+    d_a_fin = d1.get('d_rips',  np.empty((0, 2)))
+    d_b_fin = d1.get('d_alpha', np.empty((0, 2)))
+    have_h1 = len(d_a_fin) > 0 or len(d_b_fin) > 0
+
+    if have_h1:
+        render_matching(d_a_fin, d_b_fin, d1['bn_match'], ax_bn,
+                        title=f"H1 Bottleneck  (dist={d1['bottleneck']:.4f})",
+                        label_a=label_a, label_b=label_b)
+        render_matching(d_a_fin, d_b_fin, d1['ws_match'], ax_ws,
+                        title=f"H1 Wasserstein  (dist={d1['wasserstein']:.4f})",
+                        label_a=label_a, label_b=label_b)
+    else:
+        for ax in (ax_bn, ax_ws):
+            ax.text(0.5, 0.5, "No H1 points to match",
+                    ha='center', va='center', transform=ax.transAxes,
+                    fontsize=12, color='gray')
+            ax.axis('off')
+
+    dist_lines = [
+        f"H{dim}: bn={d['bottleneck']:.4f}  ws={d['wasserstein']:.4f}"
+        for dim, d in distances.items()
+    ]
+    fig.suptitle(
+        f"Alpha vs Alpha  ·  {label_a}  vs  {label_b}\n" + "  ·  ".join(dist_lines),
+        fontsize=10,
+    )
     plt.show()
 
 

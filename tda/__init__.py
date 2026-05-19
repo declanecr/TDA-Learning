@@ -48,6 +48,8 @@ from .tda_figures import (
     plot_geometric,
     plot_alpha_vr_comparison,
     plot_distance_comparison,
+    plot_rips_comparison,
+    plot_alpha_comparison,
     plot_full_analysis,
     print_distance_table,
 )
@@ -65,6 +67,6 @@ __all__ = [
     # figures
     "plot_noise_experiment", "plot_complex_comparison",
     "plot_geometric", "plot_alpha_vr_comparison",
-    "plot_distance_comparison", "plot_full_analysis",
-    "print_distance_table",
+    "plot_distance_comparison", "plot_rips_comparison", "plot_alpha_comparison",
+    "plot_full_analysis", "print_distance_table",
 ]

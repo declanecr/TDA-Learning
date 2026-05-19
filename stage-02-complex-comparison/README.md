@@ -171,6 +171,60 @@ Computes bottleneck and Wasserstein-1 distances between the Rips and Alpha diagr
 
 ---
 
+### `plot_rips_comparison` — compare two point clouds via Rips
+
+```python
+from tda import compute_both, plot_rips_comparison
+
+a = compute_both('circle', n_points=200, noise=0.1)
+b = compute_both('circle', n_points=200, noise=0.1)
+plot_rips_comparison(a, b, label_a="Circle A", label_b="Circle B")
+```
+
+Compares the Rips persistence diagrams of two different point clouds directly. Produces a 3×2 figure:
+
+```
+┌──────────────┬──────────────┐
+│  Point Cloud │  Point Cloud │
+│      A       │      B       │
+├──────────────┼──────────────┤
+│  Rips PD A   │  Rips PD B   │
+├──────────────┼──────────────┤
+│ H1 Bottleneck│ H1 Wasserstein│
+│   matching   │   matching   │
+└──────────────┴──────────────┘
+```
+
+Also prints a bottleneck/Wasserstein distance table to stdout.
+
+**Why Rips vs Rips instead of `plot_distance_comparison`?** The Alpha complex filtration uses GUDHI's internal units where α = r² (squared circumradius), while Rips uses the Euclidean radius r. Comparing their diagrams directly mixes scales, making the resulting distances geometrically uninterpretable. Use `plot_rips_comparison` whenever you want to compare two point clouds — it keeps both diagrams in the same filtration units.
+
+---
+
+### `plot_alpha_comparison` — compare two point clouds via Alpha
+
+```python
+plot_alpha_comparison(a, b, label_a="Circle A", label_b="Circle B")
+```
+
+The Alpha-side counterpart to `plot_rips_comparison`. Compares the Alpha persistence diagrams of two point clouds, which are geometrically valid to compare directly (both in r² units). Produces the same 3×2 layout, but with a key difference in row 0: for 2D point clouds the top row shows the actual **Alpha complex geometric overlay** instead of a plain scatter, giving visual intuition about why the diagrams look the way they do.
+
+```
+┌──────────────────┬──────────────────┐
+│  Alpha overlay A │  Alpha overlay B │  ← 2D only; plain scatter for 3D
+│  (α auto-derived)│  (α auto-derived)│
+├──────────────────┼──────────────────┤
+│  Alpha PD A      │  Alpha PD B      │
+├──────────────────┼──────────────────┤
+│  H1 Bottleneck   │  H1 Wasserstein  │
+│  matching        │  matching        │
+└──────────────────┴──────────────────┘
+```
+
+`alpha_value_a` / `alpha_value_b` default to `None` — the α is auto-derived from the top-persistence H1 bar in each diagram (GUDHI r² units).
+
+---
+
 ## What you can learn from using it
 
 **Rips and Alpha recover the same topology.**

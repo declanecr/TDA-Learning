@@ -70,7 +70,7 @@ All renderers take pre-computed data and one or more `Axes`. They return `None`.
 | `render_barcode(dgms, ax, title, dims)` | Barcode; arrow tips for infinite bars |
 | `render_landscape(dgms, ax, title, n_landscapes, dims)` | Persistence landscapes (tent function) |
 | `render_comparison_table(rips, alpha, ax)` | Rips vs Alpha summary metrics table |
-| `render_matching(d_r, d_a, matching, ax, title)` | Bottleneck/Wasserstein matching overlay |
+| `render_matching(d_r, d_a, matching, ax, title, label_a, label_b)` | Bottleneck/Wasserstein matching overlay; `label_a`/`label_b` default to `"Rips"`/`"Alpha"` |
 | `render_voronoi_delaunay(pts, ax, circumsphere, seed)` | Voronoi cells + Delaunay triangulation (2D) |
 | `render_alpha_overlay(pts, alpha_value, ax, circumcenter, seed)` | Alpha complex with Voronoi-clipped balls (2D) |
 | `render_vr_overlay(pts, radius, ax)` | Vietoris-Rips complex at given radius (2D) |
@@ -90,6 +90,8 @@ Each function creates a complete figure and calls `plt.show()`.
 | `plot_geometric(pts, alpha_value, shape, noise, circumsphere, circumcenter, seed)` | Voronoi+Delaunay (left) vs Alpha complex overlay (right). 2D only. |
 | `plot_alpha_vr_comparison(pts, alpha_value, shape, noise, circumcenter, seed)` | Alpha complex (left) vs Vietoris-Rips (right) at the same ball radius. |
 | `plot_distance_comparison(result)` | 2×2 figure: Rips PD, Alpha PD, H1 bottleneck matching, H1 Wasserstein matching. Also prints the distance table. |
+| `plot_rips_comparison(result_a, result_b, label_a, label_b)` | 3×2 figure comparing Rips diagrams from two point clouds: point clouds, PDs, H1 bottleneck and Wasserstein matchings. Use this instead of `plot_distance_comparison` when comparing two different point clouds — avoids the r² vs r unit mismatch of Rips/Alpha. |
+| `plot_alpha_comparison(result_a, result_b, label_a, label_b, alpha_value_a, alpha_value_b)` | 3×2 figure comparing Alpha diagrams from two point clouds. Row 0 shows the Alpha complex overlay for 2D clouds (auto-derived α) or a plain scatter for 3D. Rows 1–2 are Alpha PDs and H1 matchings. |
 | `plot_full_analysis(result, threshold, alpha_value, circumcenter, seed)` | Unified 5-panel figure: point cloud, both persistence diagrams, both barcodes, summary table, and Alpha overlay. |
 | `print_distance_table(distances)` | Prints a bottleneck/Wasserstein table to stdout. Called internally by `plot_distance_comparison`. |
 

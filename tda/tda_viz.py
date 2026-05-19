@@ -11,7 +11,7 @@ render_persistence_diagram(dgms, ax, title)
 render_barcode(dgms, ax, title, dims)
 render_landscape(dgms, ax, title, n_landscapes, dims)
 render_comparison_table(rips, alpha, ax)
-render_matching(d_r, d_a, matching, ax, title)
+render_matching(d_r, d_a, matching, ax, title, label_a, label_b)
 render_voronoi_delaunay(pts, ax, circumsphere, seed)
 render_alpha_overlay(pts, alpha_value, ax, circumcenter, seed)
 render_vr_overlay(pts, radius, ax)
@@ -218,7 +218,8 @@ def render_comparison_table(rips: RipsResult, alpha: AlphaResult, ax) -> None:
 
 
 def render_matching(d_r: np.ndarray, d_a: np.ndarray, matching: np.ndarray,
-                    ax, title: str = "") -> None:
+                    ax, title: str = "",
+                    label_a: str = "Rips", label_b: str = "Alpha") -> None:
     """
     Overlay two H1 point sets and draw their bottleneck/Wasserstein matching lines.
     Diagonal projections indicate unmatched points mapped to the diagonal.
@@ -230,10 +231,10 @@ def render_matching(d_r: np.ndarray, d_a: np.ndarray, matching: np.ndarray,
     ax.plot([lo, hi], [lo, hi], 'k--', linewidth=0.8, alpha=0.5)
 
     if len(d_r):
-        ax.scatter(d_r[:, 0], d_r[:, 1], color='tab:blue', s=30, zorder=3, label='Rips')
+        ax.scatter(d_r[:, 0], d_r[:, 1], color='tab:blue', s=30, zorder=3, label=label_a)
     if len(d_a):
         ax.scatter(d_a[:, 0], d_a[:, 1], color='tab:orange', s=30, zorder=3,
-                   marker='^', label='Alpha')
+                   marker='^', label=label_b)
 
     for m in matching:
         i, j = int(m[0]), int(m[1])
