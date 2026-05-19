@@ -20,10 +20,14 @@ from .tda_data import (
     RipsResult,
     AlphaResult,
     BothResult,
+    CubicalResult,
+    MNISTResult,
     generate_point_cloud,
     compute_rips,
     compute_alpha,
     compute_both,
+    compute_cubical,
+    compute_mnist,
     filter_diagrams,
     h1_stats,
     auto_alpha_value,
@@ -40,6 +44,7 @@ from .tda_viz import (
     render_voronoi_delaunay,
     render_alpha_overlay,
     render_vr_overlay,
+    render_mnist_image,
 )
 
 from .tda_figures import (
@@ -52,21 +57,25 @@ from .tda_figures import (
     plot_alpha_comparison,
     plot_full_analysis,
     print_distance_table,
+    plot_mnist_analysis,
 )
 
 __all__ = [
     # data
-    "RipsResult", "AlphaResult", "BothResult",
+    "RipsResult", "AlphaResult", "BothResult", "CubicalResult", "MNISTResult",
     "generate_point_cloud", "compute_rips", "compute_alpha", "compute_both",
+    "compute_cubical", "compute_mnist",
     "filter_diagrams", "h1_stats", "auto_alpha_value", "diagram_distances",
     # viz
     "render_point_cloud", "render_persistence_diagram",
     "render_barcode", "render_landscape",
     "render_comparison_table", "render_matching",
     "render_voronoi_delaunay", "render_alpha_overlay", "render_vr_overlay",
+    "render_mnist_image",
     # figures
     "plot_noise_experiment", "plot_complex_comparison",
     "plot_geometric", "plot_alpha_vr_comparison",
     "plot_distance_comparison", "plot_rips_comparison", "plot_alpha_comparison",
     "plot_full_analysis", "print_distance_table",
+    "plot_mnist_analysis",
 ]

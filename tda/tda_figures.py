@@ -15,6 +15,7 @@ plot_rips_comparison(result_a, result_b, label_a, label_b)
 plot_alpha_comparison(result_a, result_b, label_a, label_b, alpha_value_a, alpha_value_b)
 plot_full_analysis(result, threshold, alpha_value, circumcenter, seed)
 print_distance_table(distances)
+plot_mnist_analysis(result, threshold)
 """
 
 from __future__ import annotations
@@ -24,14 +25,15 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
 from .tda_data import (
-    BothResult, RipsResult,
-    filter_diagrams, auto_alpha_value, diagram_distances,
+    BothResult, RipsResult, MNISTResult,
+    filter_diagrams, auto_alpha_value, diagram_distances, h1_stats,
 )
 from .tda_viz import (
     render_point_cloud, render_persistence_diagram,
     render_barcode, render_landscape,
     render_comparison_table, render_matching,
     render_voronoi_delaunay, render_alpha_overlay, render_vr_overlay,
+    render_mnist_image,
     _ax_limits,
 )
 
@@ -540,5 +542,86 @@ def plot_full_analysis(
     render_barcode(rips_f,  ax_bc_r, title="Rips Barcode")
     render_barcode(alpha_f, ax_bc_a, title="Alpha Barcode")
     render_comparison_table(result.rips, result.alpha, ax_table)
+
+    plt.show()
+
+
+# ── Stage 03: MNIST cubical analysis ─────────────────────────────────────────
+
+def _render_cubical_barcode(dgms: list, ax, title: str = "Barcode",
+                             dims: tuple | None = None) -> None:
+    """
+    Barcode renderer safe for negative filtration values (cubical on negated images).
+
+    The standard render_barcode uses inf_clip = x_right * 1.12, which computes a
+    value less than x_right when x_right is negative. This version uses an additive
+    offset instead: inf_clip = x_right + span * 0.15.
+    """
+    colors = ['tab:blue', 'tab:orange', 'tab:green']
+    active = list(range(len(dgms))) if dims is None else list(dims)
+    all_births = [b for i in active for b, _ in dgms[i]] if active else []
+    all_finite_deaths = [d for i in active for _, d in dgms[i]
+                         if np.isfinite(d)] if active else []
+    x_left = min(all_births) if all_births else 0.0
+    x_right = max(all_finite_deaths) if all_finite_deaths else x_left + 1.0
+    span = max(x_right - x_left, 1e-6)
+    inf_clip = x_right + span * 0.15
+    y = 0
+    for dim in active:
+        dgm = dgms[dim]
+        if len(dgm) == 0:
+            continue
+        color = colors[dim % len(colors)]
+        for b, d in dgm:
+            end = d if np.isfinite(d) else inf_clip
+            ax.plot([b, end], [y, y], color=color, linewidth=1.5,
+                    solid_capstyle='butt')
+            if not np.isfinite(d):
+                ax.plot(end, y, '>', color=color, markersize=5, markeredgewidth=0)
+            y += 1
+    ax.set_title(title)
+    ax.set_yticks([])
+    ax.set_xlabel("Filtration value")
+
+
+def plot_mnist_analysis(
+    result: MNISTResult,
+    threshold: float = 0.0,
+) -> None:
+    """
+    3-panel figure for a single MNIST digit's cubical persistence:
+
+      [0] 8×8 grayscale image
+      [1] Cubical persistence diagram (H0 + H1)
+      [2] Cubical barcode (H0 + H1)
+
+    Filtration values are negative (image negated for superlevel filtration),
+    so ink pixels enter first. H1 bars represent loops within the ink strokes.
+
+    threshold : persistence threshold passed to filter_diagrams (in the same
+                negated-pixel units; e.g. 1.0 drops bars with |death−birth| ≤ 1.0)
+    """
+    cubical_f = filter_diagrams(result.cubical.dgms, threshold)
+    n_h1, top_h1 = h1_stats(cubical_f)
+    top_str = f"{top_h1:.2f}" if np.isfinite(top_h1) else "—"
+    title = (
+        f"Digit {result.digit}  |  instance {result.instance}"
+        f"  |  {result.cubical.num_simplices} cells"
+        f"  |  H1 bars={n_h1}  |  top persistence={top_str}"
+    )
+
+    fig = plt.figure(figsize=(13, 4), layout='constrained')
+    fig.suptitle(title, fontsize=11, fontweight='bold')
+    gs = fig.add_gridspec(1, 3, width_ratios=[1, 1.4, 1.4])
+
+    ax_img = fig.add_subplot(gs[0, 0])
+    ax_pd  = fig.add_subplot(gs[0, 1])
+    ax_bc  = fig.add_subplot(gs[0, 2])
+
+    render_mnist_image(result.img, ax_img, title="Input image", digit=result.digit)
+    render_persistence_diagram(cubical_f, ax_pd,
+                               title=f"Cubical PD  |  thresh={threshold}")
+    _render_cubical_barcode(cubical_f, ax_bc,
+                            title="Cubical Barcode  (H0+H1)", dims=(0, 1))
 
     plt.show()

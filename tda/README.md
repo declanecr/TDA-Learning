@@ -43,16 +43,20 @@ Everything in the public API is re-exported from `tda/__init__.py`, so a single 
 | `RipsResult` | `dgms`, `num_edges`, `elapsed_ms` |
 | `AlphaResult` | `dgms`, `num_simplices`, `elapsed_ms` |
 | `BothResult` | `pts`, `shape`, `n_points`, `noise`, `rips`, `alpha` |
+| `CubicalResult` | `dgms`, `num_simplices`, `elapsed_ms` |
+| `MNISTResult` | `digit`, `instance`, `img` (28×28 float, 0–255), `cubical` |
 
 ### Functions
 
 | Function | Description |
 |---|---|
-| `generate_point_cloud(shape, n_points, noise)` | Returns a noisy 2D/3D point cloud. `shape` is `'circle'`, `'torus'`, or `'sphere'`. |
+| `generate_point_cloud(shape, n_points, noise)` | Returns a noisy 2D/3D point cloud. `shape` is `'circle'`, `'torus'`, `'sphere'`, or `'figure8'`. |
 | `compute_rips(pts, max_dim=2)` | Runs Ripser on `pts` and returns a `RipsResult`. |
 | `compute_alpha(pts, max_dim=2)` | Runs GUDHI `AlphaComplex`. Filtration values are in GUDHI units: **α = r²** (squared circumradius), not `r`. Returns an `AlphaResult`. |
 | `compute_both(shape, n_points, noise, max_dim=2)` | Convenience wrapper: generates a point cloud, runs both Rips and Alpha, returns a `BothResult`. |
-| `filter_diagrams(dgms, threshold)` | Drops finite bars with persistence ≤ `threshold`. Infinite bars (essential classes) are always kept. Pass `threshold=0` to skip. |
+| `compute_cubical(img, max_dim=1)` | Runs GUDHI `CubicalComplex` on a grayscale image array. The image is normalised to [0, 1] and inverted (ink=0, background=1) so ink pixels enter the filtration first. Returns a `CubicalResult`. Filtration values are in [0, 1]. |
+| `compute_mnist(digit, instance=0, max_dim=1)` | Fetches a 28×28 MNIST image via `sklearn.datasets.fetch_openml` and runs cubical persistence on it. `digit` is 0–9; `instance` selects which occurrence of that digit to use. Returns a `MNISTResult`. Dataset is downloaded once and cached. |
+| `filter_diagrams(dgms, threshold)` | Drops finite bars with persistence ≤ `threshold`. Infinite bars (essential classes) are always kept. Pass `threshold=0` to skip. Works on any `dgms` list — Rips, Alpha, or cubical. |
 | `h1_stats(dgms)` | Returns `(finite H1 bar count, max H1 persistence)`. |
 | `auto_alpha_value(dgms_alpha)` | Returns the birth value of the top-persistence finite H1 bar (in GUDHI r² units). Used to pick a sensible default for geometric overlays. |
 | `diagram_distances(dgms_rips, dgms_alpha)` | Computes bottleneck and Wasserstein-1 distances between Rips and Alpha diagrams per homology dimension. Returns `{dim: {'bottleneck', 'wasserstein', 'bn_match', 'ws_match', 'd_rips', 'd_alpha'}}`. |
@@ -74,6 +78,7 @@ All renderers take pre-computed data and one or more `Axes`. They return `None`.
 | `render_voronoi_delaunay(pts, ax, circumsphere, seed)` | Voronoi cells + Delaunay triangulation (2D) |
 | `render_alpha_overlay(pts, alpha_value, ax, circumcenter, seed)` | Alpha complex with Voronoi-clipped balls (2D) |
 | `render_vr_overlay(pts, radius, ax)` | Vietoris-Rips complex at given radius (2D) |
+| `render_mnist_image(img, ax, title, digit)` | 28×28 grayscale digit image with pixel grid lines (`gray_r` colormap, fixed scale 0–255) |
 
 **Note on `alpha_value`:** functions that accept `alpha_value` expect GUDHI r² units, not radius. Convert with `r = alpha_value ** 0.5` when you need the geometric radius.
 
@@ -93,6 +98,7 @@ Each function creates a complete figure and calls `plt.show()`.
 | `plot_rips_comparison(result_a, result_b, label_a, label_b)` | 3×2 figure comparing Rips diagrams from two point clouds: point clouds, PDs, H1 bottleneck and Wasserstein matchings. Use this instead of `plot_distance_comparison` when comparing two different point clouds — avoids the r² vs r unit mismatch of Rips/Alpha. |
 | `plot_alpha_comparison(result_a, result_b, label_a, label_b, alpha_value_a, alpha_value_b)` | 3×2 figure comparing Alpha diagrams from two point clouds. Row 0 shows the Alpha complex overlay for 2D clouds (auto-derived α) or a plain scatter for 3D. Rows 1–2 are Alpha PDs and H1 matchings. |
 | `plot_full_analysis(result, threshold, alpha_value, circumcenter, seed)` | Unified 5-panel figure: point cloud, both persistence diagrams, both barcodes, summary table, and Alpha overlay. |
+| `plot_mnist_analysis(result, threshold=0.0)` | 3-panel figure for a `MNISTResult`: pixel image, cubical persistence diagram, cubical barcode (H0+H1). `threshold` drops bars with persistence ≤ the given value. |
 | `print_distance_table(distances)` | Prints a bottleneck/Wasserstein table to stdout. Called internally by `plot_distance_comparison`. |
 
 ### `representations` parameter
@@ -155,6 +161,26 @@ ax = fig.add_subplot(projection='3d')
 render_point_cloud(torus, ax, title="torus")
 plt.show()
 ```
+
+```python
+from tda import compute_mnist, plot_mnist_analysis, h1_stats
+
+# Load digit 0 (first instance) and visualise cubical persistence
+result = compute_mnist(digit=0)
+plot_mnist_analysis(result)
+
+# Suppress noise bars with a threshold (values in [0, 1])
+plot_mnist_analysis(result, threshold=0.1)
+
+# Inspect persistence directly
+n_loops, top = h1_stats(result.cubical.dgms)
+print(f"H1 bars: {n_loops}, top persistence: {top:.3f}")
+
+# Expected loop counts by digit:
+# 0, 6, 9  → 1 loop    (one enclosed background region)
+# 8        → 2 loops
+# 1, 7     → 0 loops
+```
 <img width="410" height="421" alt="image" src="https://github.com/user-attachments/assets/4e8f2ce3-e764-4e96-bada-23a91b7d4698" />
 
 
@@ -168,8 +194,9 @@ plt.show()
 |---|---|
 | `numpy` | all layers |
 | `ripser` | `tda_data` — Vietoris-Rips persistence |
-| `gudhi` | `tda_data`, `tda_viz` — Alpha complex |
+| `gudhi` | `tda_data`, `tda_viz` — Alpha complex, CubicalComplex |
 | `persim` | `tda_data`, `tda_viz` — diagram distances, plotting |
 | `tadasets` | `tda_data` — point cloud generation |
+| `scikit-learn` | `tda_data` — MNIST images via `fetch_openml` |
 | `scipy` | `tda_viz` — Delaunay, Voronoi |
 | `matplotlib` | `tda_viz`, `tda_figures` |

@@ -15,6 +15,7 @@ render_matching(d_r, d_a, matching, ax, title, label_a, label_b)
 render_voronoi_delaunay(pts, ax, circumsphere, seed)
 render_alpha_overlay(pts, alpha_value, ax, circumcenter, seed)
 render_vr_overlay(pts, radius, ax)
+render_mnist_image(img, ax, title, digit)
 """
 
 from __future__ import annotations
@@ -382,6 +383,27 @@ def render_alpha_overlay(pts: np.ndarray, alpha_value: float, ax,
     ax.set_ylim(ylim)
     ax.set_title(f"Alpha complex  (α ≤ {alpha_value:.4f})")
     ax.set_aspect('equal')
+
+
+def render_mnist_image(img: np.ndarray, ax,
+                       title: str = "MNIST Digit",
+                       digit: int | None = None) -> None:
+    """
+    Display an 8×8 grayscale digit image on ax.
+
+    img   : (8, 8) ndarray, values 0–16
+    digit : if provided, appended to the title as '(digit N)'
+    """
+    full_title = title if digit is None else f"{title}  (digit {digit})"
+    h, w = img.shape
+    ax.imshow(img, cmap='gray_r', interpolation='nearest',
+              origin='upper', vmin=0, vmax=255)
+    ax.set_title(full_title)
+    ax.set_xticks(np.arange(-0.5, w, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, h, 1), minor=True)
+    ax.grid(which='minor', color='lightgray', linewidth=0.5)
+    ax.tick_params(which='both', bottom=False, left=False,
+                   labelbottom=False, labelleft=False)
 
 
 def render_vr_overlay(pts: np.ndarray, radius: float, ax) -> None:

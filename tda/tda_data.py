@@ -3,10 +3,12 @@ tda.tda_data — pure computation layer, no matplotlib.
 
 Public API
 ----------
-generate_point_cloud(shape, n_points, noise) -> ndarray   # 'circle'|'torus'|'sphere'|'figure8'|'mnist'
+generate_point_cloud(shape, n_points, noise) -> ndarray   # 'circle'|'torus'|'sphere'|'figure8'
 compute_rips(pts, max_dim)                   -> RipsResult
 compute_alpha(pts, max_dim)                  -> AlphaResult
 compute_both(shape, n_points, noise, max_dim)-> BothResult
+compute_cubical(img, max_dim)                -> CubicalResult
+compute_mnist(digit, instance, max_dim)      -> MNISTResult
 filter_diagrams(dgms, threshold)             -> list[ndarray]
 h1_stats(dgms)                               -> (int, float)
 auto_alpha_value(dgms_alpha)                 -> float
@@ -51,27 +53,29 @@ class BothResult:
     alpha: AlphaResult
 
 
+@dataclass
+class CubicalResult:
+    dgms: list
+    num_simplices: int
+    elapsed_ms: float
+
+
+@dataclass
+class MNISTResult:
+    digit: int
+    instance: int
+    img: np.ndarray     # shape (28, 28), float64, values 0–255
+    cubical: CubicalResult
+
+
 # ── Point cloud generation ────────────────────────────────────────────────────
-
-def _generate_mnist_pixels(digit: int, instance: int, noise: float) -> np.ndarray:
-    """Return (col, row) coordinates of non-zero pixels from an sklearn digit image."""
-    from sklearn.datasets import load_digits
-    data = load_digits()
-    idx = np.where(data.target == digit)[0][instance]
-    img = data.images[idx]  # (8, 8), values 0–16
-    rows, cols = np.where(img > 0)
-    pts = np.column_stack([cols.astype(float), rows.astype(float)])
-    if noise > 0:
-        pts += np.random.randn(*pts.shape) * noise
-    return pts
-
 
 def generate_point_cloud(shape: str, n_points: int, noise: float) -> np.ndarray:
     """
     Return a noisy point cloud sampled from the given shape.
 
-    shape     : 'circle' | 'torus' | 'sphere' | 'figure8' | 'mnist'
-    n_points  : number of sample points (for 'mnist', the digit class 0–9 instead)
+    shape    : 'circle' | 'torus' | 'sphere' | 'figure8'
+    n_points : number of sample points
     """
     if shape == 'circle':
         return tadasets.dsphere(n=n_points, d=1, r=1, noise=noise)
@@ -81,10 +85,8 @@ def generate_point_cloud(shape: str, n_points: int, noise: float) -> np.ndarray:
         return tadasets.dsphere(n=n_points, d=2, r=1, noise=noise)
     if shape == 'figure8':
         return tadasets.infty_sign(n=n_points, noise=noise)
-    if shape == 'mnist':
-        return _generate_mnist_pixels(digit=n_points, instance=0, noise=noise)
     raise ValueError(
-        f"Unknown shape {shape!r}. Choose: 'circle', 'torus', 'sphere', 'figure8', 'mnist'."
+        f"Unknown shape {shape!r}. Choose: 'circle', 'torus', 'sphere', 'figure8'."
     )
 
 
@@ -141,6 +143,63 @@ def compute_both(shape: str, n_points: int, noise: float,
         rips=compute_rips(pts, max_dim),
         alpha=compute_alpha(pts, max_dim),
     )
+
+
+# ── MNIST / cubical persistence ──────────────────────────────────────────────
+
+def _load_mnist_image(digit: int, instance: int) -> np.ndarray:
+    """Return the (28, 28) grayscale image for the given digit class and instance index."""
+    from sklearn.datasets import fetch_openml
+    mnist = fetch_openml('mnist_784', version=1, as_frame=False, parser='auto')
+    idx = np.where(mnist.target == str(digit))[0][instance]
+    return mnist.data[idx].reshape(28, 28).astype(float)  # values 0.0–255.0
+
+
+def compute_cubical(img: np.ndarray, max_dim: int = 1) -> CubicalResult:
+    """
+    Run GUDHI CubicalComplex on a grayscale image using a sublevel filtration
+    on the inverted normalised pixel values (ink=0 enters first, background=1 last).
+
+    The image is normalised to [0, 1] then inverted, so ink pixels enter the
+    filtration first. H1 bars correspond to loops within the ink strokes.
+
+    img     : (H, W) ndarray, any non-negative scale
+    max_dim : maximum homology dimension (default 1; H2 is trivial for 2D grids)
+    """
+    t0 = time.time()
+    h, w = img.shape
+    scale = img.max() if img.max() > 0 else 1.0
+    cc = gudhi.CubicalComplex(
+        dimensions=[h, w],
+        top_dimensional_cells=(1 - img / scale).flatten(),
+    )
+    cc.compute_persistence()
+    pairs = cc.persistence()
+    dgms = [
+        np.array([[b, d] for dim, (b, d) in pairs if dim == i])
+        if any(dim == i for dim, _ in pairs)
+        else np.empty((0, 2))
+        for i in range(max_dim + 1)
+    ]
+    return CubicalResult(
+        dgms=dgms,
+        num_simplices=cc.num_simplices(),
+        elapsed_ms=(time.time() - t0) * 1000,
+    )
+
+
+def compute_mnist(digit: int, instance: int = 0,
+                  max_dim: int = 1) -> MNISTResult:
+    """
+    Load an sklearn digit image and compute cubical persistence on it.
+
+    digit    : class label 0–9
+    instance : which occurrence of that digit to use (default 0)
+    max_dim  : passed to compute_cubical (default 1)
+    """
+    img = _load_mnist_image(digit, instance)
+    cubical = compute_cubical(img, max_dim=max_dim)
+    return MNISTResult(digit=digit, instance=instance, img=img, cubical=cubical)
 
 
 # ── Diagram utilities ─────────────────────────────────────────────────────────
